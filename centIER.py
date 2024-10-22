@@ -33,6 +33,7 @@ Xu, D. et al. CentIER: accurate centromere identification for plant genome. Plan
     parser.add_argument('--bed2', type=str, help='Path to bed file of matrix2')
     parser.add_argument('--MINGAP', type=int, default=2, help='Minimum gap value n*100000 (default: 2)')
     parser.add_argument('--SIGNAL_THRESHOLD', type=float, default=0.7, help='Signal threshold value (default: 0.7)')
+    parser.add_argument('--LTR_result', type=str, help='LTR_result from LTR_retriver')
     return parser.parse_args()
 
 def get_interval(buck,name,threshold):
@@ -584,6 +585,7 @@ if __name__ == '__main__':
     step_len = args.step_len
     MINGAP = args.MINGAP
     SIGNAL_THRESHOLD = args.SIGNAL_THRESHOLD
+    PREVIOUS_RESULT = args.LTR_result
     kmer = defaultdict(int)
     all_kmer = defaultdict(int)
     buck = defaultdict(list)
@@ -612,28 +614,29 @@ if __name__ == '__main__':
         print ('searching for all LTRs of the input genome')
 
     database = prefix+'_LTR_database'
-    
-    if gt:
-     ### database put in tmp path
-        a=shutil.which('gt')
-        if a!=None:
-            exe=a
-            arg=[exe,'suffixerator','-db',fasta,"-indexname", database,'-tis','-suf','-lcp','-des','-ssp','-sds','-dna']
-            step1=subprocess.Popen(' '.join(arg),shell=True)
-            step1.wait()
-            arg=[exe,'ltrharvest','-index',database,'-similar','90','-vic','10','-seed','20','-seqids','yes','-minlenltr','100','-maxlenltr','7000','-mintsd','4','-maxtsd','6','-motif','TGCA','-motifmis','1','>',database+'.harvest.scn']
-            step2=subprocess.Popen(' '.join(arg),shell=True)
-            exe=script_path+'/bin/ltr_finder/ltr_finder'
-            arg=[exe,'-D','15000','-d','1000','-L','7000','-l','100','-p','20','-C','-M','0.9',fasta,'>', database+'.finder.scn']
-            step3=subprocess.Popen(' '.join(arg),shell=True)
-        else:
-            sys.stderr.write(f"{RED}The gt software has not been detected in the "
-                 "environment variables of the server. Please download "
-                 "and install it, and then add it to the environment "
-                 "variables. The download link is "
-                 "https://github.com/genometools/genometools.{RESET}\n")
-            sys.exit(1)
-    
+    if not PREVIOUS_RESULT :
+        if gt:
+         ### database put in tmp path
+            a=shutil.which('gt')
+            if a!=None:
+                exe=a
+                arg=[exe,'suffixerator','-db',fasta,"-indexname", database,'-tis','-suf','-lcp','-des','-ssp','-sds','-dna']
+                step1=subprocess.Popen(' '.join(arg),shell=True)
+                step1.wait()
+                arg=[exe,'ltrharvest','-index',database,'-similar','90','-vic','10','-seed','20','-seqids','yes','-minlenltr','100','-maxlenltr','7000','-mintsd','4','-maxtsd','6','-motif','TGCA','-motifmis','1','>',database+'.harvest.scn']
+                step2=subprocess.Popen(' '.join(arg),shell=True)
+                exe=script_path+'/bin/ltr_finder/ltr_finder'
+                arg=[exe,'-D','15000','-d','1000','-L','7000','-l','100','-p','20','-C','-M','0.9',fasta,'>', database+'.finder.scn']
+                step3=subprocess.Popen(' '.join(arg),shell=True)
+            else:
+                sys.stderr.write(f"{RED}The gt software has not been detected in the "
+                     "environment variables of the server. Please download "
+                     "and install it, and then add it to the environment "
+                     "variables. The download link is "
+                     "https://github.com/genometools/genometools.{RESET}\n")
+                sys.exit(1)
+
+  
     arange=kmer_cal(fasta)
     # print('fasta_seq',fasta_sequence)
     kmer_dir=merge_regions(arange)
@@ -675,34 +678,60 @@ if __name__ == '__main__':
         hic_dir=merge_regions(hic_dir)
     else:hic_dir={}
     
-    if gt:
-        step2.wait()
-        step3.wait()
+    if not PREVIOUS_RESULT :
+        if gt:
+            step2.wait()
+            step3.wait()
     
+    if not PREVIOUS_RESULT :
+        if ltr:
+            exe='LTR_retriever'
+            a=shutil.which('LTR_retriever')
+            if a!=None:
+                arg=[exe,'-genome',fasta, '-inharvest',database+'.harvest.scn','-infinder',database+'.finder.scn','-threads','60','-u','4.02e-9']
+                step4=subprocess.Popen(arg)
+                step4.wait()
+            else:
+                sys.stderr.write(f"{RED}The LTR_retriever software has not been detected "
+                     "in the environment variables of the server. Please "
+                     "download and install it, and then add it to the environment "
+                     "variables. The download link is "
+                     "https://github.com/oushujun/LTR_retriever.{RESET}\n")
+                sys.exit(1)
     
-    if ltr:
-        exe='LTR_retriever'
-        a=shutil.which('LTR_retriever')
-        if a!=None:
-            arg=[exe,'-genome',fasta, '-inharvest',database+'.harvest.scn','-infinder',database+'.finder.scn','-threads','60','-u','4.02e-9']
-            step4=subprocess.Popen(arg)
-            step4.wait()
-        else:
-            sys.stderr.write(f"{RED}The LTR_retriever software has not been detected "
-                 "in the environment variables of the server. Please "
-                 "download and install it, and then add it to the environment "
-                 "variables. The download link is "
-                 "https://github.com/oushujun/LTR_retriever.{RESET}\n")
-            sys.exit(1)
     if trf:
         TRF_search.wait()
     LTR_region={};LTR_level={};level_dir={}
-    if os.path.exists(prefix+'.out.LTR.distribution.txt') or os.path.exists(prefix+'.mod.out.LTR.distribution.txt'):
-        if os.path.exists(prefix+'.out.LTR.distribution.txt'):file=prefix+'.out.LTR.distribution.txt'
-        else:file=prefix+'.mod.out.LTR.distribution.txt'
-        with open(file) as f:
-            content=f.readlines()[2:]
-            if 'mod' in file:t=6
+     
+    if not PREVIOUS_RESULT :
+        if os.path.exists(prefix+'.out.LTR.distribution.txt') or os.path.exists(prefix+'.mod.out.LTR.distribution.txt'):
+            if os.path.exists(prefix+'.out.LTR.distribution.txt'):file=prefix+'.out.LTR.distribution.txt'
+            else:file=prefix+'.mod.out.LTR.distribution.txt'
+            with open(file) as f:
+                content=f.readlines()[2:]
+                if 'mod' in file:t=6
+                else:t=4
+                for line in content:
+                    linelist=line.split()
+                    chrid=linelist[0];level=float(linelist[t])
+                    if chrid not in LTR_level:LTR_level[chrid]=[]
+                    LTR_level[chrid].append(level)
+                level_dir={i:set(sorted(j,reverse=True)[:10]) for i,j in LTR_level.items()}
+                for line in content:
+                    linelist=line.split()
+                    chrid=linelist[0];st=int(linelist[1]);ed=int(linelist[2]);level=float(linelist[t])
+                    if level in level_dir[chrid]:
+                        if chrid not in LTR_region:LTR_region[chrid]=[]
+                        LTR_region[chrid].append([st,ed])
+            tf_dir=merge_regions(LTR_region)
+        else:
+            sys.stderr.write(f"{RED}Error: 'It appears that some errors occurred "
+                     "during the analysis of LTRs. You can contact the author "
+                     "to assist in resolving the issue.'{RESET}\n")
+            sys.exit(1)
+    else:
+            content=PREVIOUS_RESULT.readlines()[2:]
+            if 'mod' in PREVIOUS_RESULT:t=6
             else:t=4
             for line in content:
                 linelist=line.split()
@@ -716,12 +745,8 @@ if __name__ == '__main__':
                 if level in level_dir[chrid]:
                     if chrid not in LTR_region:LTR_region[chrid]=[]
                     LTR_region[chrid].append([st,ed])
-        tf_dir=merge_regions(LTR_region)
-    else:
-        sys.stderr.write(f"{RED}Error: 'It appears that some errors occurred "
-                 "during the analysis of LTRs. You can contact the author "
-                 "to assist in resolving the issue.'{RESET}\n")
-        sys.exit(1)
+            tf_dir=merge_regions(LTR_region)
+
 
     bat=prefix+".2.5.7.80.10.50.2000.dat"
     if repeat_file==False or mul_cents==True:
