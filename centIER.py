@@ -114,27 +114,34 @@ def kmer_cal(file):
     return arange
     
 def merge_regions(region):
-    final_result={};target_list=[]
-    for i,all in region.items():
-        length=len(all);all=sorted(all,key=lambda x:x[0])
-        if i not in final_result:final_result[i]=[]
-        for index,j in enumerate(all):
-            if index<=length-2:
-                if target_list==[]:target_list=j
-                m1,n1=all[index+1]
-                m,n=target_list
-                if (n<m1 or m>n1)==False and index<length-2:target_list=[min(m,n,m1,n1),max(m,n,m1,n1)]
-                elif index==length-2 or (n<m1 or m>n1)==True:
-                    if (n<m1 or m>n1)==False:target_list=[min(m,n,m1,n1),max(m,n,m1,n1)]
+    final_result = {}
+    target_list = []
+    for i, all in region.items():
+        length = len(all)
+        all = sorted(all, key=lambda x: x[0])
+        if i not in final_result:
+            final_result[i] = []
+        for index, j in enumerate(all):
+            if index <= length - 2:
+                if target_list == []:
+                    target_list = j
+                m1, n1 = all[index + 1]
+                m, n = target_list
+                if (n < m1 or m > n1) == False and index < length - 2:
+                    target_list = [min(m, n, m1, n1), max(m, n, m1, n1)]
+                elif index == length - 2 or (n < m1 or m > n1) == True:
+                    if (n < m1 or m > n1) == False:
+                        target_list = [min(m, n, m1, n1), max(m, n, m1, n1)]
                     final_result[i].append(target_list)
-                    target_list=[]
-            if index==length-1 and final_result[i]!=[]:
-                m,n=final_result[i][-1]
-                m1,n1=all[-1]
-                if (n<m1 or m>n1)==False:
-                    target_list=[min(m,n,m1,n1),max(m,n,m1,n1)]
-                    if target_list not in final_result[i]:
-                        final_result[i].append(target_list)
+                    target_list = []
+            if index == length - 1:
+                if final_result[i]!= []:
+                    m, n = final_result[i][-1]
+                    m1, n1 = all[-1]
+                    if (n < m1 or m > n1) == False:
+                        final_result[i][-1] = [min(m, n, m1, n1), max(m, n, m1, n1)]
+                    else:
+                        final_result[i].append(all[-1])
                 else:
                     final_result[i].append(all[-1])
     return final_result
