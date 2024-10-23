@@ -33,7 +33,7 @@ Xu, D. et al. CentIER: accurate centromere identification for plant genome. Plan
     parser.add_argument('--bed2', type=str, help='Path to bed file of matrix2')
     parser.add_argument('--MINGAP', type=int, default=2, help='Minimum gap value n*100000 (default: 2)')
     parser.add_argument('--SIGNAL_THRESHOLD', type=float, default=0.7, help='Signal threshold value (default: 0.7)')
-    parser.add_argument('--LTR_result', type=str, help='LTR_result from LTR_retriver')
+    parser.add_argument('--LTR_result', type=str, help='LTR distribution on each chromosome (.out.LTR.distribution.txt) from LTR_retriver')
     return parser.parse_args()
 
 def get_interval(buck,name,threshold):
