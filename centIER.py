@@ -756,7 +756,7 @@ if __name__ == '__main__':
             sys.exit(1)
     else:
         with open(PREVIOUS_RESULT, 'r') as file:
-            content = file.readlines()[1:]
+            content = file.readlines()[2:]
         if 'mod' in PREVIOUS_RESULT:
             t = 6
         else:
