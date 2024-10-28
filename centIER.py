@@ -755,41 +755,24 @@ if __name__ == '__main__':
                              "to assist in resolving the issue.'{RESET}\n")
             sys.exit(1)
     else:
-        with open(PREVIOUS_RESULT, 'r') as file:
-            content = file.readlines()[2:]
-        if 'mod' in PREVIOUS_RESULT:
-            t = 6
-        else:
-            t = 4
-        for line in content:
-            try:
-                linelist = line.split()
-                chrid = linelist[0]
-                level = float(linelist[t])
-                if chrid not in LTR_level:
-                    LTR_level[chrid] = []
+        with open(PREVIOUS_RESULT) as f:
+            content=f.readlines()[2:]
+            if 'mod' in file:t=6
+            else:t=4
+            for line in content:
+                linelist=line.split()
+                chrid=linelist[0];level=float(linelist[t])
+                if chrid not in LTR_level:LTR_level[chrid]=[]
                 LTR_level[chrid].append(level)
-            except ValueError:
-                sys.stderr.write(f"{RED}Error: Invalid data format in previous result. Skipping line: {line}{RESET}\n")
-                continue
-        level_dir = {i: set(sorted(j, reverse=True)[:10]) for i, j in LTR_level.items()}
-        for line in content:
-            try:
-                linelist = line.split()
-                chrid = linelist[0]
-                st = int(linelist[1])
-                ed = int(linelist[2])
-                level = float(linelist[t])
+            level_dir={i:set(sorted(j,reverse=True)[:10]) for i,j in LTR_level.items()}
+            for line in content:
+                linelist=line.split()
+                chrid=linelist[0];st=int(linelist[1]);ed=int(linelist[2]);level=float(linelist[t])
                 if level in level_dir[chrid]:
-                    if chrid not in LTR_region:
-                        LTR_region[chrid] = []
-                    LTR_region[chrid].append([st, ed])
-            except ValueError:
-                sys.stderr.write(f"{RED}Error: Invalid data format in previous result. Skipping line: {line}{RESET}\n")
-                continue
-        tf_dir = merge_regions(LTR_region)
-
-
+                    if chrid not in LTR_region:LTR_region[chrid]=[]
+                    LTR_region[chrid].append([st,ed])
+            tf_dir=merge_regions(LTR_region)
+  
     bat=prefix+".2.5.7.80.10.50.2000.dat"
     if repeat_file==False or mul_cents==True:
         t_cont=[];k_cont=[];tf_cont=[];hic_cont=[];final_result={};target_list=[];number=0
