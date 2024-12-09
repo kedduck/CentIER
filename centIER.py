@@ -710,68 +710,50 @@ if __name__ == '__main__':
         TRF_search.wait()
     LTR_region={};LTR_level={};level_dir={}
      
-    if not PREVIOUS_RESULT :
-        if os.path.exists(prefix + '.out.LTR.distribution.txt') or os.path.exists(prefix + '.mod.out.LTR.distribution.txt'):
-            if os.path.exists(prefix + '.out.LTR.distribution.txt'):
-                file = prefix + '.out.LTR.distribution.txt'
-            else:
-                file = prefix + '.mod.out.LTR.distribution.txt'
-            with open(file) as f:
-                content = f.readlines()[2:]
-                if 'mod' in file:
-                    t = 6
-                else:
-                    t = 4
-                for line in content:
-                    try:
-                        linelist = line.split()
-                        chrid = linelist[0]
-                        level = float(linelist[t])
-                        if chrid not in LTR_level:
-                            LTR_level[chrid] = []
-                        LTR_level[chrid].append(level)
-                    except ValueError:
-                        sys.stderr.write(f"{RED}Error: Invalid data format in file '{file}'. Skipping line: {line}{RESET}\n")
-                        continue
-                level_dir = {i: set(sorted(j, reverse=True)[:10]) for i, j in LTR_level.items()}
-                for line in content:
-                    try:
-                        linelist = line.split()
-                        chrid = linelist[0]
-                        st = int(linelist[1])
-                        ed = int(linelist[2])
-                        level = float(linelist[t])
-                        if level in level_dir[chrid]:
-                            if chrid not in LTR_region:
-                                LTR_region[chrid] = []
-                            LTR_region[chrid].append([st, ed])
-                    except ValueError:
-                        sys.stderr.write(f"{RED}Error: Invalid data format in file '{file}'. Skipping line: {line}{RESET}\n")
-                        continue
-            tf_dir = merge_regions(LTR_region)
+    if os.path.exists(prefix + '.out.LTR.distribution.txt') or os.path.exists(prefix + '.mod.out.LTR.distribution.txt') or PREVIOUS_RESULT:
+        if os.path.exists(prefix + '.out.LTR.distribution.txt'):
+            file = prefix + '.out.LTR.distribution.txt'
+        elif os.path.exists(prefix + '.mod.out.LTR.distribution.txt'):
+            file = prefix + '.mod.out.LTR.distribution.txt'
         else:
-            sys.stderr.write(f"{RED}Error: 'It appears that some errors occurred "
-                             "during the analysis of LTRs. You can contact the author "
-                             "to assist in resolving the issue.'{RESET}\n")
-            sys.exit(1)
+            file = PREVIOUS_RESULT
+
+        with open(file) as f:
+            content = f.readlines()[2:]
+            t = 6
+            for line in content:
+                try:
+                    linelist = line.split()
+                    chrid = linelist[0]
+                    level = float(linelist[t])
+                    if chrid not in LTR_level:
+                        LTR_level[chrid] = []
+                    LTR_level[chrid].append(level)
+                except ValueError:
+                    sys.stderr.write(f"{RED}Error: Invalid data format in file '{file}'. Skipping line: {line}{RESET}\n")
+                    continue
+            level_dir = {i: set(sorted(j, reverse=True)[:10]) for i, j in LTR_level.items()}
+            for line in content:
+                try:
+                    linelist = line.split()
+                    chrid = linelist[0]
+                    st = int(linelist[1])
+                    ed = int(linelist[2])
+                    level = float(linelist[t])
+                    if level in level_dir[chrid]:
+                        if chrid not in LTR_region:
+                            LTR_region[chrid] = []
+                        LTR_region[chrid].append([st, ed])
+                except ValueError:
+                    sys.stderr.write(f"{RED}Error: Invalid data format in file '{file}'. Skipping line: {line}{RESET}\n")
+                    continue
+        tf_dir = merge_regions(LTR_region)
     else:
-        with open(PREVIOUS_RESULT) as f:
-            content=f.readlines()[2:]
-            if 'mod' in file:t=6
-            else:t=4
-            for line in content:
-                linelist=line.split()
-                chrid=linelist[0];level=float(linelist[t])
-                if chrid not in LTR_level:LTR_level[chrid]=[]
-                LTR_level[chrid].append(level)
-            level_dir={i:set(sorted(j,reverse=True)[:10]) for i,j in LTR_level.items()}
-            for line in content:
-                linelist=line.split()
-                chrid=linelist[0];st=int(linelist[1]);ed=int(linelist[2]);level=float(linelist[t])
-                if level in level_dir[chrid]:
-                    if chrid not in LTR_region:LTR_region[chrid]=[]
-                    LTR_region[chrid].append([st,ed])
-            tf_dir=merge_regions(LTR_region)
+        sys.stderr.write(f"{RED}Error: 'It appears that some errors occurred "
+                            "during the analysis of LTRs. You can contact the author "
+                            "to assist in resolving the issue.'{RESET}\n")
+        sys.exit(1)
+
   
     bat=prefix+".2.5.7.80.10.50.2000.dat"
     if repeat_file==False or mul_cents==True:
@@ -1127,12 +1109,7 @@ if __name__ == '__main__':
         for line in f:
             linelist=line.split()
             ID=linelist[0];s=int(linelist[1]);e=int(linelist[2])
-            if ID in precise_range:s1,e1=precise_range[ID]
-            else:s1,e1,seq1=st_range[ID]
-            s2=s1-s;e2=e1-s
-            if s2<0:s2=1
-            if e2-s2>e-s:e2=e
-            monomer_position.write(ID+"\t"+str(s2)+"\t"+str(e2)+"\n")
+            monomer_position.write(ID+"\t"+str(s)+"\t"+str(e)+"\n")
     monomer_position.close()
     ltr_result=open(output + prefix+"_ltr_position.txt", "w")
     ltr1=search_ltr1(output + prefix+"_all_centromere_seq.txt")
